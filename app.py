@@ -219,14 +219,21 @@ def calculate_profit_callback(n_clicks):
     if n_clicks > 0 and len(selected_points) == 2:
         start_index, end_index = selected_points
         stock_data = fetch_stock_data("AAPL")
-        
+
+        # Calculate necessary columns for profit calculation
+        stock_data['MA20'] = stock_data['Close'].rolling(window=20).mean()
+        stock_data['Upper_band'] = stock_data['MA20'] + 2 * stock_data['Close'].rolling(window=20).std()
+        stock_data['Lower_band'] = stock_data['MA20'] - 2 * stock_data['Close'].rolling(window=20).std()
+        stock_data = calculate_wavetrend(stock_data)
+
         required_columns = ['Upper_band', 'Lower_band', 'WT1', 'WT2']
         if not all(col in stock_data.columns for col in required_columns):
             return "Required data columns are not available"
-        
+
         profit = calculate_profit(stock_data, start_index, end_index)
         return f"Calculated profit: ${profit:.2f}"
     return "Select two points to calculate profit"
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
