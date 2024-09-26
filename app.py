@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 import yfinance as yf
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server  # Defining the server attribute
+server = app.server  
 selected_points = []
 
 def fetch_stock_data(stock_symbol, timeframe="1d", start_date=None, end_date=None):
@@ -44,29 +44,6 @@ def calculate_rsi(data, window=14):
     rsi = 100 - (100 / (1 + (gain / loss)))
     data['RSI'] = rsi
     return data
-
-# Calculate profit based on buy/sell strategy
-def calculate_profit(data, start_index, end_index):
-    holdings = 1000  # Initial investment of $1000
-    buy_price = data.iloc[start_index]['Close']
-    quantity = holdings / buy_price
-    
-    for i in range(start_index, end_index + 1):
-        if data.iloc[i]['Close'] > data.iloc[i]['Upper_band'] and (data.iloc[i]['WT1'] > 60 or data.iloc[i]['WT2'] > 60):
-            sell_price = data.iloc[i]['Close']
-            quantity_sold = quantity * 0.2
-            holdings += quantity_sold * sell_price
-            quantity -= quantity_sold
-        elif data.iloc[i]['Close'] < data.iloc[i]['Lower_band'] and (data.iloc[i]['WT1'] < -60 or data.iloc[i]['WT2'] < -60):
-            buy_price = data.iloc[i]['Close']
-            quantity_bought = holdings * 0.2 / buy_price
-            holdings -= quantity_bought * buy_price
-            quantity += quantity_bought
-
-    final_price = data.iloc[end_index]['Close']
-    final_value = quantity * final_price + holdings
-    profit = final_value - 1000  # Subtract initial investment
-    return profit
 
 # Create a live updating plot
 def create_plot(data, stock_symbol):
@@ -149,26 +126,6 @@ app.layout = dbc.Container([
                 style={'height': '70vh'}
             )
         ], width=12)
-    ]),
-    dbc.Row([
-        dbc.Col([
-            html.Div(id='selected-points', style={'marginTop': 20})
-        ], width=12)
-    ]),
-    dbc.Row([
-        dbc.Col([
-            dbc.Button("Calculate Profit", id='calculate-profit', color="primary", className="mr-1", n_clicks=0)
-        ], width={'size': 2, 'offset': 5})
-    ]),
-    dbc.Row([
-        dbc.Col([
-            dbc.Button("Clear Selection", id='clear-selection', color="secondary", className="mr-1", n_clicks=0)
-        ], width={'size': 2, 'offset': 5})
-    ]),
-    dbc.Row([
-        dbc.Col([
-            html.Div(id='profit-output', style={'marginTop': 20})
-        ], width=12)
     ])
 ], fluid=True)
 
@@ -184,56 +141,6 @@ def update_graph(n_clicks, stock_symbol):
         return fig
     else:
         return go.Figure()
-
-@app.callback(
-    Output('selected-points', 'children'),
-    [Input('stock-graph', 'clickData'), Input('clear-selection', 'n_clicks')]
-)
-def update_selected_points(clickData, n_clicks):
-    global selected_points
-
-    # Get the context to determine which input triggered the callback
-    ctx = dash.callback_context
-
-    if not ctx.triggered:
-        return [f"Selected points: {selected_points}"]
-
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-    if triggered_id == 'stock-graph':
-        if clickData:
-            selected_point = clickData['points'][0]
-            selected_points.append(selected_point['pointIndex'])
-
-    elif triggered_id == 'clear-selection':
-        selected_points = []
-
-    return [f"Selected points: {selected_points}"]
-
-@app.callback(
-    Output('profit-output', 'children'),
-    [Input('calculate-profit', 'n_clicks')]
-)
-def calculate_profit_callback(n_clicks):
-    global selected_points
-    if n_clicks > 0 and len(selected_points) == 2:
-        start_index, end_index = selected_points
-        stock_data = fetch_stock_data("AAPL")
-
-        # Calculate necessary columns for profit calculation
-        stock_data['MA20'] = stock_data['Close'].rolling(window=20).mean()
-        stock_data['Upper_band'] = stock_data['MA20'] + 2 * stock_data['Close'].rolling(window=20).std()
-        stock_data['Lower_band'] = stock_data['MA20'] - 2 * stock_data['Close'].rolling(window=20).std()
-        stock_data = calculate_wavetrend(stock_data)
-
-        required_columns = ['Upper_band', 'Lower_band', 'WT1', 'WT2']
-        if not all(col in stock_data.columns for col in required_columns):
-            return "Required data columns are not available"
-
-        profit = calculate_profit(stock_data, start_index, end_index)
-        return f"Calculated profit: ${profit:.2f}"
-    return "Select two points to calculate profit"
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
