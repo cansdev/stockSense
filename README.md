@@ -1,6 +1,6 @@
 # stockSense
 
-**stockSense** is a web-based stock data visualization tool designed to help traders easily identify important technical indicators like Bollinger Bands, RSI, and Wavetrends. The project is hosted on a Heroku server (without Dynos assigned to avoid costs) but can also be run locally using Python, Flask, and Dash.
+**stockSense** is a web-based stock data visualization tool designed to help traders easily identify important technical indicators like Bollinger Bands, RSI, and Wavetrends. The project is made to be hosted on a Heroku server (however, currently without Dynos assigned to avoid costs) but can also be run locally using Python, Flask, and Dash.
 
 ---
 
