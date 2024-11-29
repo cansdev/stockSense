@@ -72,29 +72,54 @@ def create_plot(data, stock_symbol):
     fig.add_hline(y=-60, line=dict(color='green', dash='dash'), row=2, col=1)
     fig.add_hline(y=-70, line=dict(color='green', dash='dash'), row=2, col=1)
 
+        # Inside create_plot function, after detecting points:
     both_exceeded_x = []
     both_exceeded_y = []
+    both_exceeded_text = []  # For labels
+
     for index, row in data.iterrows():
         if row['Close'] > row['Upper_band'] and row['RSI'] > 70:
             both_exceeded_x.append(index)
             both_exceeded_y.append(row['Close'])
+            both_exceeded_text.append("RSI Sold")
         elif row['Close'] < row['Lower_band'] and row['RSI'] < 30:
             both_exceeded_x.append(index)
             both_exceeded_y.append(row['Close'])
+            both_exceeded_text.append("RSI Bought")
 
-    fig.add_trace(go.Scatter(x=both_exceeded_x, y=both_exceeded_y, mode='markers', marker=dict(color='green', size=10), name='Both exceeded (Bollinger & RSI)'), row=1, col=1)
+    fig.add_trace(go.Scatter(
+        x=both_exceeded_x,
+        y=both_exceeded_y,
+        mode='markers+text',
+        marker=dict(color='green', size=10),
+        text=both_exceeded_text,
+        textposition='top center',
+        name='RSI'
+    ))
 
     both_exceeded_wt_x = []
     both_exceeded_wt_y = []
+    both_exceeded_wt_text = []  # For labels
+
     for index, row in data.iterrows():
         if row['Close'] > row['Upper_band'] and (row['WT1'] > 60 or row['WT2'] > 60):
             both_exceeded_wt_x.append(index)
             both_exceeded_wt_y.append(row['Close'])
+            both_exceeded_wt_text.append("WaveTrend Sold")
         elif row['Close'] < row['Lower_band'] and (row['WT1'] < -60 or row['WT2'] < -60):
             both_exceeded_wt_x.append(index)
             both_exceeded_wt_y.append(row['Close'])
+            both_exceeded_wt_text.append("WaveTrend Bought")
 
-    fig.add_trace(go.Scatter(x=both_exceeded_wt_x, y=both_exceeded_wt_y, mode='markers', marker=dict(color='red', size=10), name='Both exceeded (Bollinger & Wavetrend)'), row=1, col=1)
+    fig.add_trace(go.Scatter(
+        x=both_exceeded_wt_x,
+        y=both_exceeded_wt_y,
+        mode='markers+text',
+        marker=dict(color='red', size=10),
+        text=both_exceeded_wt_text,
+        textposition='top center',
+        name='WaveTrend'
+    ))
 
     fig.update_layout(height=800, title_text=f'{stock_symbol} Price and Indicators')
 
@@ -123,7 +148,7 @@ app.layout = dbc.Container([
             dcc.Graph(
                 id='stock-graph',
                 config={'displayModeBar': True},
-                style={'height': '70vh'}
+                style={'height': '90vh'}
             )
         ], width=12)
     ])
